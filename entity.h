@@ -26,8 +26,22 @@ typedef struct {
   char left_k;
 } player_entity;
 
+// this also inherits entity
+typedef struct enemy_struct enemy_entity;
+typedef struct enemy_struct {
+  int x;
+  int y;
+  int w;
+  int h;
+  SDL_Texture* tex;
+  void (*update_position) (enemy_entity*);
+} enemy_entity;
+
 void draw_entity_to_buffer(SDL_Renderer* r, entity* e);
 
+void random_enemy_update(enemy_entity* e);
+
 void initialize_entity_from_texture(int x, int y, SDL_Texture* t, entity* dest);
+void initialize_enemy_entity_from_texture(int x, int y, SDL_Texture* t, enemy_entity* dest, void (*update) (enemy_entity*));
 void initialize_player_entity_from_texture(int x, int y, SDL_Texture* t, player_entity* dest);
 #endif

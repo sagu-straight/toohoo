@@ -1,4 +1,10 @@
 #include "entity.h"
+#include <stdlib.h>
+#include "rand.h"
+
+int rand_range(int min, int max) {
+  return min+(rand()%(max - min));
+}
 
 void draw_entity_to_buffer(SDL_Renderer* r, entity* e) {
   SDL_Rect a = {e->x, e->y, e->w, e->h};
@@ -20,4 +26,19 @@ void initialize_player_entity_from_texture(int x, int y, SDL_Texture* t, player_
   dest->right_k = 0;
   dest->left_k = 0;
   SDL_QueryTexture(t, NULL, NULL, &(dest->w), &(dest->h));
+}
+
+void initialize_enemy_entity_from_texture(int x, int y, SDL_Texture* t, enemy_entity* dest, void (*update) (enemy_entity*)) {
+  dest->x = x;
+  dest->y = y;
+  dest->tex = t;
+  SDL_QueryTexture(t, NULL, NULL, &(dest->w), &(dest->h));
+  dest->update_position = update;
+}
+
+void random_enemy_update(enemy_entity* e) {
+  e->x += rand_range(0, 5);
+  e->x -= rand_range(0, 5);
+  e->y += rand_range(0, 5);
+  e->y -= rand_range(0, 5);
 }
