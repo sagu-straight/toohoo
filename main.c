@@ -5,57 +5,15 @@
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_video.h>
-#include <stdio.h>
-#include <string.h>
+#include "entity.h"
+#include "ll.h"
 
-#define CHUNK_SIZE 4096
-#define STEP 5
+#define CHUNK_SIZE 4096 // sdl mixer stuff
+#define STEP 5 // player step size
 
-typedef struct {
-  int x;
-  int y;
-  int w;
-  int h;
-  SDL_Texture* tex;
-} entity;
-
-// this struct basically inherits the entity struct and we
-// can do a sort of polymorphism with typecasting because of it
-typedef struct {
-  int x;
-  int y;
-  int w;
-  int h;
-  SDL_Texture* tex;
-  char up_k;
-  char down_k;
-  char right_k;
-  char left_k;
-} player_entity;
-
-void draw_entity_to_buffer(SDL_Renderer* r, entity* e) {
-    SDL_Rect a = {e->x, e->y, e->w, e->h};
-    SDL_RenderCopy(r, e->tex, NULL, &a);
-}
-
-void initialize_entity_from_texture(int x, int y, SDL_Texture* t, entity* dest) {
-  dest->x = x;
-  dest->y = y;
-  dest->tex = t;
-  SDL_QueryTexture(t, NULL, NULL, &(dest->w), &(dest->h));
-}
-void initialize_player_entity_from_texture(int x, int y, SDL_Texture* t, player_entity* dest) {
-  dest->x = x;
-  dest->y = y;
-  dest->tex = t;
-  dest->up_k = 0;
-  dest->down_k = 0;
-  dest->right_k = 0;
-  dest->left_k = 0;
-  SDL_QueryTexture(t, NULL, NULL, &(dest->w), &(dest->h));
-}
 
 int main() {
+  // inits
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_TIMER);
   IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG);
   Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, CHUNK_SIZE);
@@ -65,12 +23,26 @@ int main() {
   SDL_Window* window;
   SDL_CreateWindowAndRenderer(800, 800, SDL_WINDOW_MAXIMIZED, &window, &renderer);
 
-  // initialize player struct
+  // initialize enemy texture
+  SDL_Surface* cirno_surface = IMG_Load("fumocirno.png");
+  SDL_Texture* cirno_tex = SDL_CreateTextureFromSurface(renderer, cirno_surface);
+  SDL_FreeSurface(cirno_surface);
+
+  // initialize player struct and texture
   SDL_Surface* reimu_surface = IMG_Load("fumoreimu.png");
   SDL_Texture* reimu_tex = SDL_CreateTextureFromSurface(renderer, reimu_surface);
   SDL_FreeSurface(reimu_surface);
   player_entity player;
-  initialize_player_entity_from_texture(0, 0, reimu_tex, &player);
+  int middle_of_screen;
+  int bottom_of_screen;
+  SDL_GetWindowSize(window, &middle_of_screen, &bottom_of_screen);
+  middle_of_screen /= 2;
+  initialize_player_entity_from_texture(middle_of_screen - player.w/2, bottom_of_screen, reimu_tex, &player);
+  player.y -= player.h; // lazy fix so she doesnt spawn off-screen
+
+  // initialize enemy structures 
+  list enemy_list;
+  initialize_list(&enemy_list);
 
   // main game loop
   SDL_Event event;
@@ -118,13 +90,24 @@ int main() {
     player.x += (player.right_k - player.left_k) * STEP;
     player.y -= (player.up_k - player.down_k) * STEP;
 
+    // TODO: update and/or generate enemies
+
+    // TODO: update and/or generate bullets
+
+
+    // player rendering
     SDL_RenderClear(renderer);
     draw_entity_to_buffer(renderer, (entity*) &player);
+    
+    // TODO: render enemies and bullets
+    
+    // finish rendering
     SDL_RenderPresent(renderer);
 
     SDL_Delay(1000/60); // temporary solution for limiting frame rate
   } while (event.type != SDL_QUIT);
 
+  //quits and frees
   SDL_DestroyTexture(reimu_tex);
   IMG_Quit();
   Mix_Quit();
