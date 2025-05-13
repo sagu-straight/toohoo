@@ -133,7 +133,7 @@ int main() {
     // finish rendering
     SDL_RenderPresent(renderer);
 
-    SDL_Delay(1000/60); // temporary solution for limiting frame rate
+    // SDL_Delay(1000/60); // temporary solution for limiting frame rate
   } while (event.type != SDL_QUIT);
 
   //quits and frees

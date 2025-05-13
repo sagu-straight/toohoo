@@ -37,8 +37,8 @@ void initialize_enemy_entity_from_texture(int x, int y, SDL_Texture* t, enemy_en
 }
 
 void random_enemy_update(enemy_entity* e) {
-  e->x += rand_range(0, 5);
-  e->x -= rand_range(0, 5);
-  e->y += rand_range(0, 5);
-  e->y -= rand_range(0, 5);
+  e->x += rand_range(0, 100);
+  e->x -= rand_range(0, 100);
+  e->y += rand_range(0, 100);
+  e->y -= rand_range(0, 100);
 }
