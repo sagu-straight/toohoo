@@ -24,6 +24,7 @@ typedef struct {
   char down_k;
   char right_k;
   char left_k;
+  char shift_k;
 } player_entity;
 
 // this also inherits entity

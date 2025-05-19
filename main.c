@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_keycode.h>
 #include <SDL2/SDL_mixer.h>
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_render.h>
@@ -12,7 +13,7 @@
 #include "rand.h"
 
 #define CHUNK_SIZE 4096 // sdl mixer stuff
-#define STEP 5 // player step size
+#define STEP 8 // player step size
 
 int main() {
   // inits
@@ -76,6 +77,10 @@ int main() {
           case SDLK_d:
             player.right_k = 1;
             break;
+          case SDLK_LSHIFT:
+          case SDLK_RSHIFT:
+            player.shift_k = 1;
+            break;
         }
         break;
 
@@ -93,13 +98,17 @@ int main() {
           case SDLK_d:
             player.right_k = 0;
             break;
+          case SDLK_LSHIFT:
+          case SDLK_RSHIFT:
+            player.shift_k = 0;
+            break;
         }
         break;
     }
 
     // updating player position
-    player.x += (player.right_k - player.left_k) * STEP;
-    player.y -= (player.up_k - player.down_k) * STEP;
+    player.x += (player.right_k - player.left_k) * (STEP >> (player.shift_k));
+    player.y -= (player.up_k - player.down_k) * (STEP >> (player.shift_k));
 
     // TODO: update and/or generate enemies
     // enemy generation
@@ -133,7 +142,7 @@ int main() {
     // finish rendering
     SDL_RenderPresent(renderer);
 
-    // SDL_Delay(1000/60); // temporary solution for limiting frame rate
+    SDL_Delay(1000/60); // temporary solution for limiting frame rate
   } while (event.type != SDL_QUIT);
 
   //quits and frees

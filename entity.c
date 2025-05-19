@@ -25,6 +25,7 @@ void initialize_player_entity_from_texture(int x, int y, SDL_Texture* t, player_
   dest->down_k = 0;
   dest->right_k = 0;
   dest->left_k = 0;
+  dest->shift_k = 0;
   SDL_QueryTexture(t, NULL, NULL, &(dest->w), &(dest->h));
 }
 
@@ -37,8 +38,8 @@ void initialize_enemy_entity_from_texture(int x, int y, SDL_Texture* t, enemy_en
 }
 
 void random_enemy_update(enemy_entity* e) {
-  e->x += rand_range(0, 100);
-  e->x -= rand_range(0, 100);
-  e->y += rand_range(0, 100);
-  e->y -= rand_range(0, 100);
+  e->x += rand_range(0, 5);
+  e->x -= rand_range(0, 5);
+  e->y += rand_range(0, 5);
+  e->y -= rand_range(0, 5);
 }
