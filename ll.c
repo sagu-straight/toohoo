@@ -2,7 +2,7 @@
 #include "entity.h"
 #include <stdlib.h>
 
-void add_node_to_list(list* l, entity* e) {
+void add_node_to_list(list* l, void* e) {
   node* n = malloc(sizeof(node));
   n->e = e;
 

@@ -14,6 +14,15 @@
 
 #define CHUNK_SIZE 4096 // sdl mixer stuff
 #define STEP 8 // player step size
+#define ENEMY_SPAWN_LINE -80 // bit of a voodoo number tbh
+
+list enemy_list;
+list enemy_bullet_list;
+list player_bullet_list;
+
+SDL_Texture* cirno_tex;
+SDL_Texture* reimu_tex;
+SDL_Texture* bullet_tex;
 
 int main() {
   // inits
@@ -29,15 +38,20 @@ int main() {
 
   // initialize enemy texture
   SDL_Surface* cirno_surface = IMG_Load("fumocirno.png");
-  SDL_Texture* cirno_tex = SDL_CreateTextureFromSurface(renderer, cirno_surface);
+  cirno_tex = SDL_CreateTextureFromSurface(renderer, cirno_surface);
   SDL_FreeSurface(cirno_surface);
+
+  // initialize enemy bullet texture
+  SDL_Surface* bullet_surface = IMG_Load("fumookuustar1.png");
+  bullet_tex = SDL_CreateTextureFromSurface(renderer, bullet_surface);
+  SDL_FreeSurface(bullet_surface);
 
   // load baka.wav
   Mix_Chunk* baka = Mix_LoadWAV("baka.wav");
 
   // initialize player struct and texture
   SDL_Surface* reimu_surface = IMG_Load("fumoreimu.png");
-  SDL_Texture* reimu_tex = SDL_CreateTextureFromSurface(renderer, reimu_surface);
+  reimu_tex = SDL_CreateTextureFromSurface(renderer, reimu_surface);
   SDL_FreeSurface(reimu_surface);
   player_entity player;
   int screen_w;
@@ -49,9 +63,6 @@ int main() {
   player.y -= player.h; // lazy fix so she doesnt spawn off-screen
 
   // initialize lists
-  list enemy_list;
-  list enemy_bullet_list;
-  list player_bullet_list;
   initialize_list(&enemy_list);
   initialize_list(&enemy_bullet_list);
   initialize_list(&player_bullet_list);
@@ -114,7 +125,8 @@ int main() {
     // enemy generation
     if (rand() < RAND_MAX/10) {
       enemy_entity* enemy = malloc(sizeof(enemy_entity));
-      initialize_enemy_entity_from_texture(rand_range(0, screen_w), rand_range(0, screen_h), cirno_tex, enemy, random_enemy_update);
+      initialize_enemy_entity_from_texture(rand_range(0, screen_w),
+                                           ENEMY_SPAWN_LINE, cirno_tex, enemy, random_enemy_update);
       add_node_to_list(&enemy_list, (entity*) enemy);
       Mix_PlayChannel(-1, baka, 0);
     }
@@ -124,8 +136,12 @@ int main() {
       aux1->update_position(aux1);
     }
 
-
-    // TODO: update and/or generate bullets
+    // TODO: update bullets
+    // enemy bullet updates
+    for (node* aux = enemy_bullet_list.start; aux != NULL; aux = aux->next) {
+      bullet_entity* aux1 = (bullet_entity*) aux->e;
+      aux1->update_position(aux1);
+    }
 
     // TODO: check and handle collisions
 
@@ -138,6 +154,11 @@ int main() {
     for (node* aux = enemy_list.start; aux != NULL; aux = aux->next) {
       draw_entity_to_buffer(renderer, aux->e);
     }
+    // enemy bullet rendering
+    for (node* aux = enemy_bullet_list.start; aux != NULL; aux = aux->next) {
+      draw_entity_to_buffer(renderer, aux->e);
+    }
+    
     
     // finish rendering
     SDL_RenderPresent(renderer);

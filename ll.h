@@ -2,12 +2,10 @@
 #ifndef __LL__
 #define __LL__
 
-#include "entity.h"
-
 typedef struct node{
   struct node* next;
   struct node* prev;
-  entity* e;
+  void* e;
 } node;
 
 typedef struct {
@@ -15,7 +13,7 @@ typedef struct {
   node* end;
 } list;
 
-void add_node_to_list(list* l, entity* e);
+void add_node_to_list(list* l, void* e);
 void remove_node_from_list(list* l, node* n);
 void initialize_list(list* l);
 
