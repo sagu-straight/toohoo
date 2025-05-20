@@ -32,7 +32,7 @@ int main() {
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_TIMER);
   IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG);
   Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, CHUNK_SIZE);
-  srand(time(NULL));
+  srand(time(NULL)); // sets random seed to system time
 
   // open window 
   SDL_Renderer* renderer;
