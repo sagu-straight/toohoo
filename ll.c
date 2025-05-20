@@ -1,5 +1,4 @@
 #include "ll.h"
-#include "entity.h"
 #include <stdlib.h>
 
 void add_node_to_list(list* l, void* e) {
@@ -23,7 +22,8 @@ void add_node_to_list(list* l, void* e) {
 void remove_node_from_list(list* l, node* n) {
   if (l->start == n) {
     l->start = n->next;
-    l->start->prev = NULL;
+    if (l->start)
+      l->start->prev = NULL;
     return;
   }
   if (l->end == n) {

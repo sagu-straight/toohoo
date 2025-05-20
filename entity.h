@@ -41,6 +41,9 @@ typedef struct enemy_struct {
   int h;
   SDL_Texture* tex;
   void (*update_position) (enemy_entity*);
+  // data buffer to be allocated on enemy creation, so that each enemy
+  // can have an arbitrary amount of data it can work with for its ai
+  void* data; 
 } enemy_entity;
 
 // this also inherits entity
@@ -63,7 +66,7 @@ void draw_entity_to_buffer(SDL_Renderer* r, entity* e);
 void random_enemy_update(enemy_entity* e);
 
 void initialize_entity_from_texture(int x, int y, SDL_Texture* t, entity* dest);
-void initialize_enemy_entity_from_texture(int x, int y, SDL_Texture* t, enemy_entity* dest, void (*update) (enemy_entity*));
+void initialize_enemy_entity_from_texture(int x, int y, SDL_Texture* t, enemy_entity* dest, void (*update) (enemy_entity*), int buff_size);
 void initialize_player_entity_from_texture(int x, int y, SDL_Texture* t, player_entity* dest);
 void initialize_bullet_entity_from_texture(int x, int y, int dx, int dy, SDL_Texture* t, void (*update) (bullet_entity*), bullet_entity* dest);
 

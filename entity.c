@@ -31,12 +31,16 @@ void initialize_player_entity_from_texture(int x, int y, SDL_Texture* t, player_
   SDL_QueryTexture(t, NULL, NULL, &(dest->w), &(dest->h));
 }
 
-void initialize_enemy_entity_from_texture(int x, int y, SDL_Texture* t, enemy_entity* dest, void (*update) (enemy_entity*)) {
+void initialize_enemy_entity_from_texture(int x, int y, SDL_Texture* t, enemy_entity* dest, void (*update) (enemy_entity*), int buff_size) {
   dest->x = x;
   dest->y = y;
   dest->tex = t;
   SDL_QueryTexture(t, NULL, NULL, &(dest->w), &(dest->h));
   dest->update_position = update;
+  if (buff_size > 0)
+    dest->data = malloc(buff_size);
+  else
+    dest->data = 0;
 }
 
 void linear_bullet_update(bullet_entity* b);

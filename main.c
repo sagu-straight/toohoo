@@ -24,6 +24,9 @@ SDL_Texture* cirno_tex;
 SDL_Texture* reimu_tex;
 SDL_Texture* bullet_tex;
 
+int window_height = 800;
+int window_width = 800;
+
 int main() {
   // inits
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_TIMER);
@@ -34,7 +37,7 @@ int main() {
   // open window 
   SDL_Renderer* renderer;
   SDL_Window* window;
-  SDL_CreateWindowAndRenderer(800, 800, SDL_WINDOW_MAXIMIZED, &window, &renderer);
+  SDL_CreateWindowAndRenderer(window_width, window_height, SDL_WINDOW_BORDERLESS, &window, &renderer);
 
   // initialize enemy texture
   SDL_Surface* cirno_surface = IMG_Load("fumocirno.png");
@@ -54,12 +57,9 @@ int main() {
   reimu_tex = SDL_CreateTextureFromSurface(renderer, reimu_surface);
   SDL_FreeSurface(reimu_surface);
   player_entity player;
-  int screen_w;
-  int screen_h;
   int middle_of_screen;
-  SDL_GetWindowSize(window, &screen_w, &screen_h);
-  middle_of_screen = screen_w / 2;
-  initialize_player_entity_from_texture(middle_of_screen, screen_h, reimu_tex, &player);
+  middle_of_screen =  window_width/ 2;
+  initialize_player_entity_from_texture(middle_of_screen, window_height, reimu_tex, &player);
   player.y -= player.h; // lazy fix so she doesnt spawn off-screen
 
   // initialize lists
@@ -122,34 +122,65 @@ int main() {
     player.y -= (player.up_k - player.down_k) * (STEP >> (player.shift_k));
 
     // TODO: update and/or generate enemies
-    // enemy generation
+    // DEMO enemy generation
     if (rand() < RAND_MAX/10) {
       enemy_entity* enemy = malloc(sizeof(enemy_entity));
-      initialize_enemy_entity_from_texture(rand_range(0, screen_w),
-                                           ENEMY_SPAWN_LINE, cirno_tex, enemy, random_enemy_update);
-      add_node_to_list(&enemy_list, (entity*) enemy);
-      Mix_PlayChannel(-1, baka, 0);
-    }
-    // enemy updating
-    for (node* aux = enemy_list.start; aux != NULL; aux = aux->next) {
-      enemy_entity* aux1 = (enemy_entity*) aux->e;
-      aux1->update_position(aux1);
+      initialize_enemy_entity_from_texture(rand_range(0, window_width),
+                                           ENEMY_SPAWN_LINE, cirno_tex, enemy, random_enemy_update, 0);
+      add_node_to_list(&enemy_list, enemy);
+      // Mix_PlayChannel(-1, baka, 0);
     }
 
-    // TODO: update bullets
-    // enemy bullet updates
-    for (node* aux = enemy_bullet_list.start; aux != NULL; aux = aux->next) {
-      bullet_entity* aux1 = (bullet_entity*) aux->e;
+    // enemy updating
+    node* aux = enemy_list.start;
+    while (aux != NULL) {
+      node* next = aux->next;
+      enemy_entity* aux1 = (enemy_entity*) aux->e;
+
       aux1->update_position(aux1);
+
+      // if the enemy is out of bounds, delete the fella
+      // allows fellas to exist off the window to the side and above, but not below
+      if (aux1->y > window_height) {
+        remove_node_from_list(&enemy_list, aux);
+        free(aux);
+        if (aux1->data != 0)
+          free(aux1->data);
+        free(aux1);
+      }
+
+      aux = next;
     }
+
+    // enemy bullet updates
+    aux = enemy_bullet_list.start;
+    while (aux != NULL) {
+      node* next = aux->next;
+      bullet_entity* aux1 = (bullet_entity*) aux->e;
+
+      aux1->update_position(aux1);
+
+      // if the bullet is out of bounds, delete the fella
+      if (aux1->y > window_height || aux1->y < ENEMY_SPAWN_LINE ||
+          aux1->x < 0 || aux1->x > window_width) {
+        remove_node_from_list(&enemy_bullet_list, aux);
+        free(aux);
+        free(aux1);
+      }
+
+      aux = next;
+    }
+
+    // TODO: create and update player bullets
 
     // TODO: check and handle collisions
 
     // player rendering
     SDL_RenderClear(renderer);
     draw_entity_to_buffer(renderer, (entity*) &player);
+
+    // TODO render player bullets
     
-    // TODO: render enemies and bullets
     // enemy rendering
     for (node* aux = enemy_list.start; aux != NULL; aux = aux->next) {
       draw_entity_to_buffer(renderer, aux->e);
