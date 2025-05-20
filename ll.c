@@ -20,15 +20,26 @@ void add_node_to_list(list* l, void* e) {
 }
 
 void remove_node_from_list(list* l, node* n) {
+  if (!l->start || !n) return;
+  
   if (l->start == n) {
     l->start = n->next;
+
     if (l->start)
       l->start->prev = NULL;
+    else
+      l->end = NULL;
+
     return;
   }
   if (l->end == n) {
     l->end = n->prev;
-    l->end->next = NULL;
+
+    if (l->end)
+      l->end->next = NULL;
+    else
+      l->start = NULL;
+
     return;
   }
 

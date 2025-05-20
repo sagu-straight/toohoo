@@ -14,7 +14,11 @@
 
 #define CHUNK_SIZE 4096 // sdl mixer stuff
 #define STEP 8 // player step size
-#define ENEMY_SPAWN_LINE -80 // bit of a voodoo number tbh
+
+char* REIMU_IMG = "fumoreimu.png";
+char* CIRNO_IMG = "fumocirno.png";
+char* BULLET_IMG = "fumookuustar1.png";
+char* GOHEI_IMG = "fumoreimugohei1.png";
 
 list enemy_list;
 list enemy_bullet_list;
@@ -40,20 +44,24 @@ int main() {
   SDL_CreateWindowAndRenderer(window_width, window_height, 0, &window, &renderer);
 
   // initialize enemy texture
-  SDL_Surface* cirno_surface = IMG_Load("fumocirno.png");
+  SDL_Surface* cirno_surface = IMG_Load(CIRNO_IMG);
   cirno_tex = SDL_CreateTextureFromSurface(renderer, cirno_surface);
   SDL_FreeSurface(cirno_surface);
 
   // initialize enemy bullet texture
-  SDL_Surface* bullet_surface = IMG_Load("fumookuustar1.png");
+  SDL_Surface* bullet_surface = IMG_Load(BULLET_IMG);
   bullet_tex = SDL_CreateTextureFromSurface(renderer, bullet_surface);
   SDL_FreeSurface(bullet_surface);
+
+  SDL_Surface* gohei_surface = IMG_Load(GOHEI_IMG);
+  SDL_Texture* gohei_tex = SDL_CreateTextureFromSurface(renderer, gohei_surface);
+  SDL_FreeSurface(gohei_surface);
 
   // load baka.wav
   Mix_Chunk* baka = Mix_LoadWAV("baka.wav");
 
   // initialize player struct and texture
-  SDL_Surface* reimu_surface = IMG_Load("fumoreimu.png");
+  SDL_Surface* reimu_surface = IMG_Load(REIMU_IMG);
   reimu_tex = SDL_CreateTextureFromSurface(renderer, reimu_surface);
   SDL_FreeSurface(reimu_surface);
   player_entity player;
@@ -92,6 +100,9 @@ int main() {
           case SDLK_RSHIFT:
             player.shift_k = 1;
             break;
+          case SDLK_j:
+            player.fire_k = 1;
+            break;
         }
         break;
 
@@ -113,11 +124,15 @@ int main() {
           case SDLK_RSHIFT:
             player.shift_k = 0;
             break;
+          case SDLK_j:
+            player.fire_k = 0;
+            break;
         }
         break;
     }
 
-    // updating player position
+    // updating player 
+    player.cooldown--;
     int new_p_x = player.x + (player.right_k - player.left_k) * (STEP >> (player.shift_k));
     int new_p_y = player.y - (player.up_k - player.down_k) * (STEP >> (player.shift_k));
     if (new_p_x + player.w < window_width && new_p_x > 0)
@@ -125,18 +140,44 @@ int main() {
     if (new_p_y + player.h < window_height && new_p_y > 0)
       player.y = new_p_y;
 
+    // create player bullets
+    if (player.fire_k && player.cooldown <= 0) {
+      bullet_entity* b = malloc(sizeof(bullet_entity));
+      initialize_bullet_entity_from_texture(player.x, player.y,
+                                            0, 10, gohei_tex, linear_bullet_update, b);
+      add_node_to_list(&player_bullet_list, b);
+      player.cooldown = PLAYER_BULLET_COOLDOWN;
+    }
+
+    // update player bullets
+    node* aux = player_bullet_list.start;
+    while (aux != NULL) {
+      node* next = aux->next;
+      bullet_entity* aux1 = (bullet_entity*) aux->e;
+
+      aux1->update_position(aux1);
+
+      // if the bullet is out of bounds, delete the fella
+      if (aux1->y > window_height || aux1->y + aux1->h < ENEMY_SPAWN_LINE ||
+          aux1->x + aux1->w < 0 || aux1->x > window_width) {
+        remove_node_from_list(&player_bullet_list, aux);
+        free(aux);
+        free(aux1);
+      }
+
+      aux = next;
+    }
+
     // TODO: update and/or generate enemies
     // DEMO enemy generation
     if (rand() < RAND_MAX/10) {
-      enemy_entity* enemy = malloc(sizeof(enemy_entity));
-      initialize_enemy_entity_from_texture(rand_range(0, window_width),
-                                           ENEMY_SPAWN_LINE, cirno_tex, enemy, random_enemy_update, 0);
+      enemy_entity* enemy = make_simple_enemy(cirno_tex);
       add_node_to_list(&enemy_list, enemy);
-      // Mix_PlayChannel(-1, baka, 0);
+      Mix_PlayChannel(-1, baka, 0);
     }
 
     // enemy updating
-    node* aux = enemy_list.start;
+    aux = enemy_list.start;
     while (aux != NULL) {
       node* next = aux->next;
       enemy_entity* aux1 = (enemy_entity*) aux->e;
@@ -165,8 +206,8 @@ int main() {
       aux1->update_position(aux1);
 
       // if the bullet is out of bounds, delete the fella
-      if (aux1->y > window_height || aux1->y < ENEMY_SPAWN_LINE ||
-          aux1->x < 0 || aux1->x > window_width) {
+      if (aux1->y > window_height || aux1->y + aux1->h < ENEMY_SPAWN_LINE ||
+          aux1->x + aux1->w < 0 || aux1->x > window_width) {
         remove_node_from_list(&enemy_bullet_list, aux);
         free(aux);
         free(aux1);
@@ -175,8 +216,6 @@ int main() {
       aux = next;
     }
 
-    // TODO: create and update player bullets
-
     // TODO: check and handle collisions
 
     // player rendering
@@ -184,6 +223,9 @@ int main() {
     draw_entity_to_buffer(renderer, (entity*) &player);
 
     // TODO render player bullets
+    for (node* aux = player_bullet_list.start; aux != NULL; aux = aux->next) {
+      draw_entity_to_buffer(renderer, aux->e);
+    }
     
     // enemy rendering
     for (node* aux = enemy_list.start; aux != NULL; aux = aux->next) {

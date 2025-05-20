@@ -5,8 +5,13 @@
 #include "ll.h"
 
 extern list enemy_bullet_list;
+extern int window_height;
+extern int window_width;
 
 extern SDL_Texture* bullet_tex;
+
+#define ENEMY_SPAWN_LINE -80 // bit of a voodoo number tbh
+#define PLAYER_BULLET_COOLDOWN 3
 
 // struct that describes any entity in the game
 typedef struct {
@@ -30,6 +35,8 @@ typedef struct {
   char right_k;
   char left_k;
   char shift_k;
+  char fire_k;
+  char cooldown;
 } player_entity;
 
 // this also inherits entity
@@ -63,11 +70,14 @@ typedef struct bullet_struct {
 
 void draw_entity_to_buffer(SDL_Renderer* r, entity* e);
 
-void random_enemy_update(enemy_entity* e);
+void simple_enemy_update(enemy_entity* e);
 
 void initialize_entity_from_texture(int x, int y, SDL_Texture* t, entity* dest);
 void initialize_enemy_entity_from_texture(int x, int y, SDL_Texture* t, enemy_entity* dest, void (*update) (enemy_entity*), int buff_size);
 void initialize_player_entity_from_texture(int x, int y, SDL_Texture* t, player_entity* dest);
 void initialize_bullet_entity_from_texture(int x, int y, int dx, int dy, SDL_Texture* t, void (*update) (bullet_entity*), bullet_entity* dest);
+
+enemy_entity* make_simple_enemy(SDL_Texture* tex);
+void linear_bullet_update(bullet_entity* b);
 
 #endif
