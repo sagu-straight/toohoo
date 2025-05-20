@@ -37,7 +37,7 @@ int main() {
   // open window 
   SDL_Renderer* renderer;
   SDL_Window* window;
-  SDL_CreateWindowAndRenderer(window_width, window_height, SDL_WINDOW_BORDERLESS, &window, &renderer);
+  SDL_CreateWindowAndRenderer(window_width, window_height, 0, &window, &renderer);
 
   // initialize enemy texture
   SDL_Surface* cirno_surface = IMG_Load("fumocirno.png");
@@ -60,7 +60,7 @@ int main() {
   int middle_of_screen;
   middle_of_screen =  window_width/ 2;
   initialize_player_entity_from_texture(middle_of_screen, window_height, reimu_tex, &player);
-  player.y -= player.h; // lazy fix so she doesnt spawn off-screen
+  player.y -= player.h + 100; // lazy fix so she doesnt spawn off-screen
 
   // initialize lists
   initialize_list(&enemy_list);
@@ -118,8 +118,12 @@ int main() {
     }
 
     // updating player position
-    player.x += (player.right_k - player.left_k) * (STEP >> (player.shift_k));
-    player.y -= (player.up_k - player.down_k) * (STEP >> (player.shift_k));
+    int new_p_x = player.x + (player.right_k - player.left_k) * (STEP >> (player.shift_k));
+    int new_p_y = player.y - (player.up_k - player.down_k) * (STEP >> (player.shift_k));
+    if (new_p_x + player.w < window_width && new_p_x > 0)
+      player.x = new_p_x;
+    if (new_p_y + player.h < window_height && new_p_y > 0)
+      player.y = new_p_y;
 
     // TODO: update and/or generate enemies
     // DEMO enemy generation
