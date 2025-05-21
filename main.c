@@ -10,15 +10,20 @@
 #include <time.h>
 #include "entity.h"
 #include "ll.h"
-#include "rand.h"
 
 #define CHUNK_SIZE 4096 // sdl mixer stuff
 #define STEP 8 // player step size
+#define HIT_PENALTY 10
+#define HIT_BONUS 50
+#define KILL_BONUS 200
+#define HITLESS_BONUS 10000
+#define REIMU_HITBOX_R 3
 
 char* REIMU_IMG = "fumoreimu.png";
 char* CIRNO_IMG = "fumocirno.png";
-char* BULLET_IMG = "fumookuustar1.png";
+char* FLAKE_IMG = "snowflake.png";
 char* GOHEI_IMG = "fumoreimugohei1.png";
+char* BACKGROUND_IMG = "background.jpg";
 
 list enemy_list;
 list enemy_bullet_list;
@@ -26,10 +31,10 @@ list player_bullet_list;
 
 SDL_Texture* cirno_tex;
 SDL_Texture* reimu_tex;
-SDL_Texture* bullet_tex;
+SDL_Texture* flake_tex;
 
 int window_height = 800;
-int window_width = 800;
+int window_width = 500;
 
 int main() {
   // inits
@@ -38,10 +43,18 @@ int main() {
   Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, CHUNK_SIZE);
   srand(time(NULL)); // sets random seed to system time
 
+  int score = 0;
+  int hitless = 1;
+
   // open window 
   SDL_Renderer* renderer;
   SDL_Window* window;
   SDL_CreateWindowAndRenderer(window_width, window_height, 0, &window, &renderer);
+
+  // initialize background texture
+  SDL_Surface* background_surface = IMG_Load(BACKGROUND_IMG);
+  SDL_Texture* background_tex = SDL_CreateTextureFromSurface(renderer, background_surface);
+  SDL_FreeSurface(background_surface);
 
   // initialize enemy texture
   SDL_Surface* cirno_surface = IMG_Load(CIRNO_IMG);
@@ -49,8 +62,8 @@ int main() {
   SDL_FreeSurface(cirno_surface);
 
   // initialize enemy bullet texture
-  SDL_Surface* bullet_surface = IMG_Load(BULLET_IMG);
-  bullet_tex = SDL_CreateTextureFromSurface(renderer, bullet_surface);
+  SDL_Surface* bullet_surface = IMG_Load(FLAKE_IMG);
+  flake_tex = SDL_CreateTextureFromSurface(renderer, bullet_surface);
   SDL_FreeSurface(bullet_surface);
 
   SDL_Surface* gohei_surface = IMG_Load(GOHEI_IMG);
@@ -74,6 +87,7 @@ int main() {
   initialize_list(&enemy_list);
   initialize_list(&enemy_bullet_list);
   initialize_list(&player_bullet_list);
+
 
   // main game loop
   SDL_Event event;
@@ -131,6 +145,8 @@ int main() {
         break;
     }
 
+
+
     // updating player 
     player.cooldown--;
     int new_p_x = player.x + (player.right_k - player.left_k) * (STEP >> (player.shift_k));
@@ -173,7 +189,7 @@ int main() {
     if (rand() < RAND_MAX/10) {
       enemy_entity* enemy = make_simple_enemy(cirno_tex);
       add_node_to_list(&enemy_list, enemy);
-      Mix_PlayChannel(-1, baka, 0);
+      // Mix_PlayChannel(-1, baka, 0);
     }
 
     // enemy updating
@@ -189,7 +205,7 @@ int main() {
       if (aux1->y > window_height) {
         remove_node_from_list(&enemy_list, aux);
         free(aux);
-        if (aux1->data != 0)
+        if (aux1->data_size > 0)
           free(aux1->data);
         free(aux1);
       }
@@ -216,13 +232,83 @@ int main() {
       aux = next;
     }
 
-    // TODO: check and handle collisions
+    // reimu's hitbox is made smaller than the sprite kind of like in real touhou
+    SDL_Rect player_rect = {player.x + player.w/2 - REIMU_HITBOX_R, player.y + player.h/2 - REIMU_HITBOX_R, REIMU_HITBOX_R, REIMU_HITBOX_R};
+
+    // check and handle collisions
+    // player to enemy bullets
+    aux = enemy_bullet_list.start;
+    while (aux != NULL) {
+      node* next = aux->next;
+
+      bullet_entity* aux1 = aux->e;
+      SDL_Rect ebullet_rect = {aux1->x, aux1->y, aux1->w, aux1->h};
+      if (rectangles_collide(player_rect, ebullet_rect)) {
+        score -= HIT_PENALTY;
+        hitless = 0;
+        remove_node_from_list(&enemy_bullet_list, aux);
+        free(aux1);
+        free(aux);
+      }
+
+      aux = next;
+    }
+    // player to enemies
+    for (node* aux = enemy_list.start; aux != NULL; aux = aux->next) {
+      enemy_entity* aux1 = aux->e;
+      SDL_Rect enemy_rect = {aux1->x, aux1->y, aux1->w, aux1->h};
+      if (rectangles_collide(player_rect, enemy_rect)) {
+        score -= HIT_PENALTY;
+        hitless = 0;
+      }
+    }
+    // player bullets to enemies (most computationaly expensive one O(n^2))
+    node* pbaux = player_bullet_list.start;
+    node* eaux;
+    while (pbaux != NULL) {
+      eaux = enemy_list.start;
+      node* next_pb = pbaux->next;
+      while (eaux != NULL) {
+        node* next_e = eaux->next;
+
+        bullet_entity* pb = pbaux->e;
+        enemy_entity* e = eaux->e;
+        SDL_Rect pb_rect = {pb->x, pb->y, pb->w, pb->h};
+        SDL_Rect e_rect = {e->x, e->y, e->w, e->h};
+        if (rectangles_collide(pb_rect, e_rect)) {
+          remove_node_from_list(&player_bullet_list, pbaux);
+          e->health -= 1;
+          score += HIT_BONUS;
+          if (e->health <= 0) {
+            score += KILL_BONUS;
+            remove_node_from_list(&enemy_list, eaux);
+            free(eaux);
+            if (e->data_size > 0)
+              free(e->data);
+            free(e);
+          }
+
+          free(pbaux);
+          free(pb);
+          break; // this bullet is now invalid so we skip to the next one (sneaky to debug arrrgh)
+        }
+        eaux = next_e;
+      }
+      pbaux = next_pb;
+    }
+
+
+    // ------ begin rendering ------
+
+    // SDL_RenderClear(renderer);
+    SDL_Rect a = {0, 0, window_width, window_height};
+    SDL_RenderCopy(renderer, background_tex, NULL, &a);
 
     // player rendering
-    SDL_RenderClear(renderer);
     draw_entity_to_buffer(renderer, (entity*) &player);
+    // SDL_RenderDrawRect(renderer, &player_rect);
 
-    // TODO render player bullets
+    // player bullet rendering
     for (node* aux = player_bullet_list.start; aux != NULL; aux = aux->next) {
       draw_entity_to_buffer(renderer, aux->e);
     }
@@ -237,11 +323,16 @@ int main() {
     }
     
     
-    // finish rendering
     SDL_RenderPresent(renderer);
+
+    // printf("%d\n", score);
+
+    // ------ end rendering ------
 
     SDL_Delay(1000/60); // temporary solution for limiting frame rate
   } while (event.type != SDL_QUIT);
+
+  printf("%d\n", hitless);
 
   //quits and frees
   SDL_DestroyTexture(reimu_tex);

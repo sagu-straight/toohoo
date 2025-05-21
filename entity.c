@@ -1,4 +1,5 @@
 #include "entity.h"
+#include <SDL2/SDL_rect.h>
 #include <stdlib.h>
 #include "ll.h"
 #include "rand.h"
@@ -10,6 +11,15 @@ int rand_range(int min, int max) {
 void draw_entity_to_buffer(SDL_Renderer* r, entity* e) {
   SDL_Rect a = {e->x, e->y, e->w, e->h};
   SDL_RenderCopy(r, e->tex, NULL, &a);
+}
+
+int rectangles_collide(SDL_Rect a, SDL_Rect b) {
+    if (a.x + a.w <= b.x) return 0; 
+    if (a.x >= b.x + b.w) return 0; 
+    if (a.y + a.h <= b.y) return 0; 
+    if (a.y >= b.y + b.h) return 0; 
+
+    return 1;
 }
 
 void initialize_entity_from_texture(int x, int y, SDL_Texture* t, entity* dest) {
@@ -33,12 +43,14 @@ void initialize_player_entity_from_texture(int x, int y, SDL_Texture* t, player_
   SDL_QueryTexture(t, NULL, NULL, &(dest->w), &(dest->h));
 }
 
-void initialize_enemy_entity_from_texture(int x, int y, SDL_Texture* t, enemy_entity* dest, void (*update) (enemy_entity*), int buff_size) {
+void initialize_enemy_entity_from_texture(int x, int y, SDL_Texture* t, int health, enemy_entity* dest, void (*update) (enemy_entity*), int buff_size) {
   dest->x = x;
   dest->y = y;
   dest->tex = t;
+  dest->health = health;
   SDL_QueryTexture(t, NULL, NULL, &(dest->w), &(dest->h));
   dest->update_position = update;
+  dest->data_size = buff_size;
   if (buff_size > 0)
     dest->data = malloc(buff_size);
   else
@@ -63,9 +75,8 @@ void linear_bullet_update(bullet_entity* b) {
   b->y -= b->dy;
 }
 
-#define SIMPLE_ENEMY_COOLDOWN 30 // abt 2 bullets p/ sec
 void simple_enemy_update(enemy_entity* e) {
-  static int step = 8;
+  static int step = 4;
 
   e->y += step;
 
@@ -76,7 +87,8 @@ void simple_enemy_update(enemy_entity* e) {
   int b_yspeed = -12;
 
   bullet_entity* b = malloc(sizeof(bullet_entity));
-  initialize_bullet_entity_from_texture(e->x, e->y, b_xspeed, b_yspeed, bullet_tex, linear_bullet_update, b);
+  initialize_bullet_entity_from_texture(e->x, e->y, b_xspeed, b_yspeed, flake_tex, linear_bullet_update, b);
+  b->h = b->w = 35;
   add_node_to_list(&enemy_bullet_list, b);
   *(int*) e->data = SIMPLE_ENEMY_COOLDOWN;
 }
@@ -84,7 +96,7 @@ void simple_enemy_update(enemy_entity* e) {
 enemy_entity* make_simple_enemy(SDL_Texture* tex) {
       enemy_entity* enemy = malloc(sizeof(enemy_entity));
       initialize_enemy_entity_from_texture(rand_range(0, window_width),
-                                           ENEMY_SPAWN_LINE, tex, enemy, simple_enemy_update, sizeof(int));
+                                           ENEMY_SPAWN_LINE, tex, 3, enemy, simple_enemy_update, sizeof(int));
       *(int*) enemy->data = SIMPLE_ENEMY_COOLDOWN;
       return enemy;
 }

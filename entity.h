@@ -8,10 +8,11 @@ extern list enemy_bullet_list;
 extern int window_height;
 extern int window_width;
 
-extern SDL_Texture* bullet_tex;
+extern SDL_Texture* flake_tex;
 
 #define ENEMY_SPAWN_LINE -80 // bit of a voodoo number tbh
 #define PLAYER_BULLET_COOLDOWN 3
+#define SIMPLE_ENEMY_COOLDOWN 50
 
 // struct that describes any entity in the game
 typedef struct {
@@ -48,9 +49,11 @@ typedef struct enemy_struct {
   int h;
   SDL_Texture* tex;
   void (*update_position) (enemy_entity*);
+  int health;
   // data buffer to be allocated on enemy creation, so that each enemy
   // can have an arbitrary amount of data it can work with for its ai
   void* data; 
+  int data_size;
 } enemy_entity;
 
 // this also inherits entity
@@ -70,14 +73,16 @@ typedef struct bullet_struct {
 
 void draw_entity_to_buffer(SDL_Renderer* r, entity* e);
 
-void simple_enemy_update(enemy_entity* e);
+int rectangles_collide(SDL_Rect a, SDL_Rect b);
 
 void initialize_entity_from_texture(int x, int y, SDL_Texture* t, entity* dest);
-void initialize_enemy_entity_from_texture(int x, int y, SDL_Texture* t, enemy_entity* dest, void (*update) (enemy_entity*), int buff_size);
+void initialize_enemy_entity_from_texture(int x, int y, SDL_Texture* t, int health, enemy_entity* dest, void (*update) (enemy_entity*), int buff_size);
 void initialize_player_entity_from_texture(int x, int y, SDL_Texture* t, player_entity* dest);
 void initialize_bullet_entity_from_texture(int x, int y, int dx, int dy, SDL_Texture* t, void (*update) (bullet_entity*), bullet_entity* dest);
 
+void simple_enemy_update(enemy_entity* e);
 enemy_entity* make_simple_enemy(SDL_Texture* tex);
+
 void linear_bullet_update(bullet_entity* b);
 
 #endif
