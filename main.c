@@ -10,6 +10,7 @@
 #include <time.h>
 #include "entity.h"
 #include "ll.h"
+#include "rand.h"
 
 #define CHUNK_SIZE 4096 // sdl mixer stuff
 #define STEP 8 // player step size
@@ -186,7 +187,7 @@ int main() {
 
     // TODO: update and/or generate enemies
     // DEMO enemy generation
-    if (rand() < RAND_MAX/10) {
+    if (rand_range(1, 100) <= 3) {
       enemy_entity* enemy = make_simple_enemy(cirno_tex);
       add_node_to_list(&enemy_list, enemy);
       // Mix_PlayChannel(-1, baka, 0);
