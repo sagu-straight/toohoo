@@ -98,5 +98,6 @@ enemy_entity* make_simple_enemy(SDL_Texture* tex) {
       initialize_enemy_entity_from_texture(rand_range(0, window_width),
                                            ENEMY_SPAWN_LINE, tex, 3, enemy, simple_enemy_update, sizeof(int));
       *(int*) enemy->data = SIMPLE_ENEMY_COOLDOWN;
+      enemy->x = enemy->x + enemy->w >= window_width ? window_width - enemy->w : enemy->x;
       return enemy;
 }

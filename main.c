@@ -186,11 +186,11 @@ int main() {
     }
 
     // TODO: update and/or generate enemies
-    // DEMO enemy generation
+    // cirno generation
     if (rand_range(1, 100) <= 3) {
       enemy_entity* enemy = make_simple_enemy(cirno_tex);
       add_node_to_list(&enemy_list, enemy);
-      // Mix_PlayChannel(-1, baka, 0);
+      Mix_PlayChannel(-1, baka, 0);
     }
 
     // enemy updating
