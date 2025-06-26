@@ -11,3 +11,4 @@ theres a decent makefile just run make
 # playing
 
 move with wasd and press j to shoot
+also hold shift to move slower ig

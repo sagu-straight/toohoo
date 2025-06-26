@@ -2,3 +2,4 @@ a.out
 vgcore*
 toohoo
 *.o
+obj/*

@@ -1,8 +1,8 @@
-#include "entity.h"
+#include "../headers/entity.h"
 #include <SDL2/SDL_rect.h>
 #include <stdlib.h>
-#include "ll.h"
-#include "rand.h"
+#include "../headers/ll.h"
+#include "../headers/rand.h"
 
 int rand_range(int min, int max) {
   return min+(rand()%(max - min));

@@ -1,27 +1,23 @@
+# you can change this to your soy compiler if you want to
 CC = gcc
-CFLAGS = -lSDL2 -lSDL2_image -lSDL2_mixer
-OBJECTS = ll.o entity.o main.o
-HEADERS = ll.h entity.h rand.h
+GAME_NAME = toohoo
 
-toohoo: $(OBJECTS) $(HEADERS) 
-	$(CC) $(CFLAGS) $(OBJECTS) -o toohoo
+# magic makefile shit
+SRC := $(wildcard src/*.c)
+OBJ := $(patsubst src/%.c,obj/%.o,$(SRC))
+CFLAGS = -lSDL2 -lSDL2_mixer -lSDL2_image
 
-debug: $(OBJECTS)
-	$(CC) $(CFLAGS) $(OBJECTS) -g -o toohoo
-
-main.o: main.c ll.h entity.h rand.h
-	$(CC) $(CFLAGS) main.c -c -o main.o
-
-ll.o: ll.c ll.h
-	$(CC) $(CFLAGS) ll.c -c -o ll.o
-
-entity.o: entity.c entity.h rand.h
-	$(CC) $(CFLAGS) entity.c -c -o entity.o
+game: $(OBJ)
+	$(CC) obj/* $(CFLAGS) -o $(GAME_NAME)
 
 clean:
-	rm -f *.o
+	rm -rf obj/*
 
 purge:
-	rm -f *.o
-	rm -f toohoo
-	
+	rm -rf obj/*
+	rm -f $(GAME_NAME)
+
+# crazy makefile shit 
+obj/%.o: src/%.c 
+	$(CC) $(CFLAGS) -c $< -o $@
+

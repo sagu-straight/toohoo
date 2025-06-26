@@ -8,9 +8,9 @@
 #include <SDL2/SDL_video.h>
 #include <stdlib.h>
 #include <time.h>
-#include "entity.h"
-#include "ll.h"
-#include "rand.h"
+#include "../headers/entity.h"
+#include "../headers/ll.h"
+#include "../headers/rand.h"
 
 #define CHUNK_SIZE 4096 // sdl mixer stuff
 #define STEP 8 // player step size
@@ -19,12 +19,13 @@
 #define KILL_BONUS 200
 #define HITLESS_BONUS 10000
 #define REIMU_HITBOX_R 3
+#define PRE_BOSS_CIRNO 15
 
-char* REIMU_IMG = "fumoreimu.png";
-char* CIRNO_IMG = "fumocirno.png";
-char* FLAKE_IMG = "snowflake.png";
-char* GOHEI_IMG = "fumoreimugohei1.png";
-char* BACKGROUND_IMG = "background.jpg";
+char* REIMU_IMG = "assets/fumoreimu.png";
+char* CIRNO_IMG = "assets/fumocirno.png";
+char* FLAKE_IMG = "assets/snowflake.png";
+char* GOHEI_IMG = "assets/fumoreimugohei1.png";
+char* BACKGROUND_IMG = "assets/background.jpg";
 
 list enemy_list;
 list enemy_bullet_list;
@@ -45,6 +46,7 @@ int main() {
   srand(time(NULL)); // sets random seed to system time
 
   int score = 0;
+  int cirno_spawn_count = 0;
   int hitless = 1;
 
   // open window 
@@ -72,7 +74,7 @@ int main() {
   SDL_FreeSurface(gohei_surface);
 
   // load baka.wav
-  Mix_Chunk* baka = Mix_LoadWAV("baka.wav");
+  Mix_Chunk* baka = Mix_LoadWAV("assets/baka.wav");
 
   // initialize player struct and texture
   SDL_Surface* reimu_surface = IMG_Load(REIMU_IMG);
@@ -187,7 +189,8 @@ int main() {
 
     // TODO: update and/or generate enemies
     // cirno generation
-    if (rand_range(1, 100) <= 3) {
+    if (rand_range(1, 100) <= 3 && cirno_spawn_count < PRE_BOSS_CIRNO) {
+      cirno_spawn_count++;
       enemy_entity* enemy = make_simple_enemy(cirno_tex);
       add_node_to_list(&enemy_list, enemy);
       Mix_PlayChannel(-1, baka, 0);
