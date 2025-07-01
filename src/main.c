@@ -19,10 +19,12 @@
 #define KILL_BONUS 200
 #define HITLESS_BONUS 10000
 #define REIMU_HITBOX_R 3
-#define PRE_BOSS_CIRNO 15
+#define PRE_BOSS_CIRNO 1
 
 char* REIMU_IMG = "assets/fumoreimu.png";
 char* CIRNO_IMG = "assets/fumocirno.png";
+char* OKUU_IMG  = "assets/fumookuu.png"; 
+char* STAR_IMG  = "assets/fumookuustar1.png";
 char* FLAKE_IMG = "assets/snowflake.png";
 char* GOHEI_IMG = "assets/fumoreimugohei1.png";
 char* BACKGROUND_IMG = "assets/background.jpg";
@@ -31,8 +33,12 @@ list enemy_list;
 list enemy_bullet_list;
 list player_bullet_list;
 
+player_entity player;
+
 SDL_Texture* cirno_tex;
 SDL_Texture* reimu_tex;
+SDL_Texture* okuu_tex;
+SDL_Texture* star_tex;
 SDL_Texture* flake_tex;
 
 int window_height = 800;
@@ -47,6 +53,7 @@ int main() {
 
   int score = 0;
   int cirno_spawn_count = 0;
+  int okuu_spawned = 0;
   int hitless = 1;
 
   // open window 
@@ -64,11 +71,22 @@ int main() {
   cirno_tex = SDL_CreateTextureFromSurface(renderer, cirno_surface);
   SDL_FreeSurface(cirno_surface);
 
+  // initialize boss texture
+  SDL_Surface* okuu_surface = IMG_Load(OKUU_IMG);
+  okuu_tex = SDL_CreateTextureFromSurface(renderer, okuu_surface);
+  SDL_FreeSurface(okuu_surface);
+
   // initialize enemy bullet texture
   SDL_Surface* bullet_surface = IMG_Load(FLAKE_IMG);
   flake_tex = SDL_CreateTextureFromSurface(renderer, bullet_surface);
   SDL_FreeSurface(bullet_surface);
 
+  // initialize boss bullet texture
+  SDL_Surface* star_surface = IMG_Load(STAR_IMG);
+  star_tex = SDL_CreateTextureFromSurface(renderer, star_surface);
+  SDL_FreeSurface(star_surface);
+
+  // initialize gohei texture (player bullets)
   SDL_Surface* gohei_surface = IMG_Load(GOHEI_IMG);
   SDL_Texture* gohei_tex = SDL_CreateTextureFromSurface(renderer, gohei_surface);
   SDL_FreeSurface(gohei_surface);
@@ -80,7 +98,6 @@ int main() {
   SDL_Surface* reimu_surface = IMG_Load(REIMU_IMG);
   reimu_tex = SDL_CreateTextureFromSurface(renderer, reimu_surface);
   SDL_FreeSurface(reimu_surface);
-  player_entity player;
   int middle_of_screen;
   middle_of_screen =  window_width/ 2;
   initialize_player_entity_from_texture(middle_of_screen, window_height, reimu_tex, &player);
@@ -187,13 +204,18 @@ int main() {
       aux = next;
     }
 
-    // TODO: update and/or generate enemies
     // cirno generation
-    if (rand_range(1, 100) <= 3 && cirno_spawn_count < PRE_BOSS_CIRNO) {
-      cirno_spawn_count++;
-      enemy_entity* enemy = make_simple_enemy(cirno_tex);
-      add_node_to_list(&enemy_list, enemy);
-      Mix_PlayChannel(-1, baka, 0);
+    if (cirno_spawn_count < PRE_BOSS_CIRNO) {
+      if (rand_range(1, 100) <= 3) {
+        cirno_spawn_count++;
+        enemy_entity* enemy = make_simple_enemy(cirno_tex);
+        add_node_to_list(&enemy_list, enemy);
+        Mix_PlayChannel(-1, baka, 0);
+      }
+    } else if (!okuu_spawned) {
+      enemy_entity* okuu = make_boss(okuu_tex);
+      add_node_to_list(&enemy_list, okuu);
+      okuu_spawned = 1;
     }
 
     // enemy updating

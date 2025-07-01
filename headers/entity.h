@@ -83,6 +83,9 @@ void initialize_bullet_entity_from_texture(int x, int y, int dx, int dy, SDL_Tex
 void simple_enemy_update(enemy_entity* e);
 enemy_entity* make_simple_enemy(SDL_Texture* tex);
 
+void boss_update(enemy_entity* e);
+enemy_entity* make_boss(SDL_Texture* tex);
+
 void linear_bullet_update(bullet_entity* b);
 
 #endif

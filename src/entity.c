@@ -1,5 +1,6 @@
 #include "../headers/entity.h"
 #include <SDL2/SDL_rect.h>
+#include <math.h>
 #include <stdlib.h>
 #include "../headers/ll.h"
 #include "../headers/rand.h"
@@ -101,3 +102,63 @@ enemy_entity* make_simple_enemy(SDL_Texture* tex) {
       enemy->x = enemy->x + enemy->w >= window_width ? window_width - enemy->w : enemy->x;
       return enemy;
 }
+
+
+enum boss_state {
+  DRAMATIC_ENTRANCE,
+  ATTACK,
+};
+
+struct boss_data {
+  enum boss_state state;
+  int cooldown;
+};
+
+#define BOSS_COOLDOWN 3
+#define BOSS_HEALTH 2000
+#define BOSS_BULLET_SPEED 15
+
+extern player_entity player;
+extern SDL_Texture* star_tex;
+void boss_update(enemy_entity* e) {
+  struct boss_data* data = e->data;
+  int tx;
+  int ty;
+  switch (data->state) {
+    case DRAMATIC_ENTRANCE:
+      e->y += 1;
+      if (e->y >= ENEMY_SPAWN_LINE + 200)
+        data->state = ATTACK;
+      break;
+    case ATTACK:
+      tx = (e->x + e->w/2) - (player.x + player.w/2);
+      ty = (e->y + e->h/2) - (player.y + player.h/2);
+      if (data->cooldown <= 0) {
+        bullet_entity* b = malloc(sizeof(bullet_entity));
+        float vec_len = sqrt(tx*tx + ty*ty);
+        float ftx = tx / vec_len;
+        float fty = ty / vec_len;
+        initialize_bullet_entity_from_texture(e->x, e->y,
+           (int)(-ftx * BOSS_BULLET_SPEED), (int)(fty * BOSS_BULLET_SPEED), star_tex, linear_bullet_update, b);
+        add_node_to_list(&enemy_bullet_list, b);
+        data->cooldown = BOSS_COOLDOWN;
+      } else data->cooldown--;
+      break;
+  }
+}
+
+enemy_entity* make_boss(SDL_Texture* tex) {
+  enemy_entity* boss = malloc(sizeof(enemy_entity));
+  initialize_enemy_entity_from_texture(window_width / 2 - 32, ENEMY_SPAWN_LINE, tex, BOSS_HEALTH,
+                                        boss, boss_update, sizeof(struct boss_data));
+
+  struct boss_data data;
+  data.state = DRAMATIC_ENTRANCE;
+  data.cooldown = BOSS_COOLDOWN;
+
+  *(struct boss_data*) boss->data = data;
+
+  return boss;
+}
+
+
