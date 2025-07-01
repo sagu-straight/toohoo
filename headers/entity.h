@@ -16,8 +16,8 @@ extern SDL_Texture* flake_tex;
 
 // struct that describes any entity in the game
 typedef struct {
-  int x;
-  int y;
+  float x;
+  float y;
   int w;
   int h;
   SDL_Texture* tex;
@@ -26,8 +26,8 @@ typedef struct {
 // this struct basically inherits the entity struct and we
 // can do a sort of polymorphism with typecasting because of it
 typedef struct {
-  int x;
-  int y;
+  float x;
+  float y;
   int w;
   int h;
   SDL_Texture* tex;
@@ -43,8 +43,8 @@ typedef struct {
 // this also inherits entity
 typedef struct enemy_struct enemy_entity;
 typedef struct enemy_struct {
-  int x;
-  int y;
+  float x;
+  float y;
   int w;
   int h;
   SDL_Texture* tex;
@@ -59,14 +59,14 @@ typedef struct enemy_struct {
 // this also inherits entity
 typedef struct bullet_struct bullet_entity;
 typedef struct bullet_struct {
-  int x;
-  int y;
+  float x;
+  float y;
   int w;
   int h;
   SDL_Texture* tex;
   void (*update_position) (bullet_entity*);
-  int dx;
-  int dy;
+  float dx;
+  float dy;
   int t; // may be unused but i have some ideas for it
 } bullet_entity;
 
@@ -75,10 +75,10 @@ void draw_entity_to_buffer(SDL_Renderer* r, entity* e);
 
 int rectangles_collide(SDL_Rect a, SDL_Rect b);
 
-void initialize_entity_from_texture(int x, int y, SDL_Texture* t, entity* dest);
-void initialize_enemy_entity_from_texture(int x, int y, SDL_Texture* t, int health, enemy_entity* dest, void (*update) (enemy_entity*), int buff_size);
-void initialize_player_entity_from_texture(int x, int y, SDL_Texture* t, player_entity* dest);
-void initialize_bullet_entity_from_texture(int x, int y, int dx, int dy, SDL_Texture* t, void (*update) (bullet_entity*), bullet_entity* dest);
+void initialize_entity_from_texture(float x, float y, SDL_Texture* t, entity* dest);
+void initialize_enemy_entity_from_texture(float x, float y, SDL_Texture* t, int health, enemy_entity* dest, void (*update) (enemy_entity*), int buff_size);
+void initialize_player_entity_from_texture(float x, float y, SDL_Texture* t, player_entity* dest);
+void initialize_bullet_entity_from_texture(float x, float y, float dx, float dy, SDL_Texture* t, void (*update) (bullet_entity*), bullet_entity* dest);
 
 void simple_enemy_update(enemy_entity* e);
 enemy_entity* make_simple_enemy(SDL_Texture* tex);

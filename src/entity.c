@@ -23,14 +23,14 @@ int rectangles_collide(SDL_Rect a, SDL_Rect b) {
     return 1;
 }
 
-void initialize_entity_from_texture(int x, int y, SDL_Texture* t, entity* dest) {
+void initialize_entity_from_texture(float x, float y, SDL_Texture* t, entity* dest) {
   dest->x = x;
   dest->y = y;
   dest->tex = t;
   SDL_QueryTexture(t, NULL, NULL, &(dest->w), &(dest->h));
 }
 
-void initialize_player_entity_from_texture(int x, int y, SDL_Texture* t, player_entity* dest) {
+void initialize_player_entity_from_texture(float x, float y, SDL_Texture* t, player_entity* dest) {
   dest->x = x;
   dest->y = y;
   dest->tex = t;
@@ -44,7 +44,7 @@ void initialize_player_entity_from_texture(int x, int y, SDL_Texture* t, player_
   SDL_QueryTexture(t, NULL, NULL, &(dest->w), &(dest->h));
 }
 
-void initialize_enemy_entity_from_texture(int x, int y, SDL_Texture* t, int health, enemy_entity* dest, void (*update) (enemy_entity*), int buff_size) {
+void initialize_enemy_entity_from_texture(float x, float y, SDL_Texture* t, int health, enemy_entity* dest, void (*update) (enemy_entity*), int buff_size) {
   dest->x = x;
   dest->y = y;
   dest->tex = t;
@@ -60,7 +60,7 @@ void initialize_enemy_entity_from_texture(int x, int y, SDL_Texture* t, int heal
 
 void linear_bullet_update(bullet_entity* b);
 
-void initialize_bullet_entity_from_texture(int x, int y, int dx, int dy, SDL_Texture* t, void (*update) (bullet_entity*), bullet_entity* dest) {
+void initialize_bullet_entity_from_texture(float x, float y, float dx, float dy, SDL_Texture* t, void (*update) (bullet_entity*), bullet_entity* dest) {
   dest->x = x;
   dest->y = y;
   dest->dx = dx;
@@ -114,9 +114,9 @@ struct boss_data {
   int cooldown;
 };
 
-#define BOSS_COOLDOWN 3
+#define BOSS_COOLDOWN 30
 #define BOSS_HEALTH 2000
-#define BOSS_BULLET_SPEED 15
+#define BOSS_BULLET_SPEED 3
 
 extern player_entity player;
 extern SDL_Texture* star_tex;
@@ -131,15 +131,15 @@ void boss_update(enemy_entity* e) {
         data->state = ATTACK;
       break;
     case ATTACK:
-      tx = (e->x + e->w/2) - (player.x + player.w/2);
-      ty = (e->y + e->h/2) - (player.y + player.h/2);
+      tx = (e->x + e->w) - (player.x + player.w);
+      ty = (e->y + e->h) - (player.y + player.h);
       if (data->cooldown <= 0) {
         bullet_entity* b = malloc(sizeof(bullet_entity));
         float vec_len = sqrt(tx*tx + ty*ty);
         float ftx = tx / vec_len;
         float fty = ty / vec_len;
         initialize_bullet_entity_from_texture(e->x, e->y,
-           (int)(-ftx * BOSS_BULLET_SPEED), (int)(fty * BOSS_BULLET_SPEED), star_tex, linear_bullet_update, b);
+           -ftx * BOSS_BULLET_SPEED, fty * BOSS_BULLET_SPEED, star_tex, linear_bullet_update, b);
         add_node_to_list(&enemy_bullet_list, b);
         data->cooldown = BOSS_COOLDOWN;
       } else data->cooldown--;
@@ -149,7 +149,7 @@ void boss_update(enemy_entity* e) {
 
 enemy_entity* make_boss(SDL_Texture* tex) {
   enemy_entity* boss = malloc(sizeof(enemy_entity));
-  initialize_enemy_entity_from_texture(window_width / 2 - 32, ENEMY_SPAWN_LINE, tex, BOSS_HEALTH,
+  initialize_enemy_entity_from_texture((float) window_width / 2 - 32, ENEMY_SPAWN_LINE, tex, BOSS_HEALTH,
                                         boss, boss_update, sizeof(struct boss_data));
 
   struct boss_data data;
