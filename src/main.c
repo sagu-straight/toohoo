@@ -98,8 +98,7 @@ int main() {
   SDL_Surface* reimu_surface = IMG_Load(REIMU_IMG);
   reimu_tex = SDL_CreateTextureFromSurface(renderer, reimu_surface);
   SDL_FreeSurface(reimu_surface);
-  int middle_of_screen;
-  middle_of_screen =  window_width/ 2;
+  int middle_of_screen =  window_width/ 2;
   initialize_player_entity_from_texture(middle_of_screen, window_height, reimu_tex, &player);
   player.y -= player.h + 100; // lazy fix so she doesnt spawn off-screen
 
@@ -259,7 +258,7 @@ int main() {
     }
 
     // reimu's hitbox is made smaller than the sprite kind of like in real touhou
-    SDL_Rect player_rect = {player.x + player.w/2 - REIMU_HITBOX_R, player.y + player.h/2 - REIMU_HITBOX_R, REIMU_HITBOX_R, REIMU_HITBOX_R};
+    SDL_Rect player_rect = {player.x + player.w/2.0 - REIMU_HITBOX_R, player.y + player.h/2.0 - REIMU_HITBOX_R, REIMU_HITBOX_R, REIMU_HITBOX_R};
 
     // check and handle collisions
     // player to enemy bullets
@@ -357,8 +356,6 @@ int main() {
 
     SDL_Delay(1000/60); // temporary solution for limiting frame rate
   } while (event.type != SDL_QUIT);
-
-  printf("%d\n", hitless);
 
   //quits and frees
   SDL_DestroyTexture(reimu_tex);

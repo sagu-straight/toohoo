@@ -107,6 +107,7 @@ enemy_entity* make_simple_enemy(SDL_Texture* tex) {
 enum boss_state {
   DRAMATIC_ENTRANCE,
   ATTACK,
+  SPELL_CARD,
 };
 
 struct boss_data {
@@ -114,9 +115,11 @@ struct boss_data {
   int cooldown;
 };
 
-#define BOSS_COOLDOWN 30
-#define BOSS_HEALTH 2000
+// i was going to tidy up and put these in a header but who gaf
+#define BOSS_COOLDOWN 25
+#define BOSS_HEALTH 500
 #define BOSS_BULLET_SPEED 3
+#define IN_SEGMENT_STEP 9
 
 extern player_entity player;
 extern SDL_Texture* star_tex;
@@ -126,22 +129,53 @@ void boss_update(enemy_entity* e) {
   int ty;
   switch (data->state) {
     case DRAMATIC_ENTRANCE:
-      e->y += 1;
-      if (e->y >= ENEMY_SPAWN_LINE + 200)
+      if (++e->y >= ENEMY_SPAWN_LINE + 200)
         data->state = ATTACK;
       break;
+
     case ATTACK:
       tx = (e->x + e->w) - (player.x + player.w);
       ty = (e->y + e->h) - (player.y + player.h);
       if (data->cooldown <= 0) {
         bullet_entity* b = malloc(sizeof(bullet_entity));
+
+        // normalizes the speed vector of the bullet
         float vec_len = sqrt(tx*tx + ty*ty);
         float ftx = tx / vec_len;
         float fty = ty / vec_len;
+
         initialize_bullet_entity_from_texture(e->x, e->y,
            -ftx * BOSS_BULLET_SPEED, fty * BOSS_BULLET_SPEED, star_tex, linear_bullet_update, b);
         add_node_to_list(&enemy_bullet_list, b);
         data->cooldown = BOSS_COOLDOWN;
+      } else data->cooldown--;
+
+      if (e->health <= BOSS_HEALTH / 3)
+        data->state = SPELL_CARD;
+      break;
+
+    // spell card danmaku is supposed to look like that radioactive warning
+    // symbol ( ), as per jork's suggestion. my implementation of that is dividing
+    // the angle around okuu into 6 segments, half of them filled with bullets
+    // and the other half empty in an alternating manner
+    case SPELL_CARD:
+      if (data->cooldown <= 0) {
+        int parity = 0;
+        for (float base_angle = 0; base_angle < 360; base_angle += 60, parity ^= 1) {
+          if (parity == 0) continue;
+
+          for (float angle = base_angle; angle < base_angle + 60; angle += IN_SEGMENT_STEP) {
+            bullet_entity* b = malloc(sizeof(bullet_entity));
+            float dx = cos((base_angle + angle)* M_PI / 180.0);
+            float dy = sin((base_angle + angle)* M_PI / 180.0);
+
+          initialize_bullet_entity_from_texture(e->x, e->y,
+             -dx * BOSS_BULLET_SPEED, dy * BOSS_BULLET_SPEED, star_tex, linear_bullet_update, b);
+          add_node_to_list(&enemy_bullet_list, b);
+          }
+
+          data->cooldown = BOSS_COOLDOWN / 2;
+        }
       } else data->cooldown--;
       break;
   }
@@ -156,6 +190,7 @@ enemy_entity* make_boss(SDL_Texture* tex) {
   data.state = DRAMATIC_ENTRANCE;
   data.cooldown = BOSS_COOLDOWN;
 
+  // evil pointer magic
   *(struct boss_data*) boss->data = data;
 
   return boss;
