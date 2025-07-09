@@ -6,7 +6,11 @@
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_video.h>
+#include <SDL2/SDL_ttf.h>
+#include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include "../headers/entity.h"
 #include "../headers/ll.h"
@@ -19,7 +23,7 @@
 #define KILL_BONUS 200
 #define HITLESS_BONUS 10000
 #define REIMU_HITBOX_R 3
-#define PRE_BOSS_CIRNO 1
+#define PRE_BOSS_CIRNO 15
 
 char* REIMU_IMG = "assets/fumoreimu.png";
 char* CIRNO_IMG = "assets/fumocirno.png";
@@ -28,6 +32,7 @@ char* STAR_IMG  = "assets/fumookuustar1.png";
 char* FLAKE_IMG = "assets/snowflake.png";
 char* GOHEI_IMG = "assets/fumoreimugohei1.png";
 char* BACKGROUND_IMG = "assets/background.jpg";
+char* FONT = "assets/lepidos.ttf";
 
 list enemy_list;
 list enemy_bullet_list;
@@ -44,10 +49,12 @@ SDL_Texture* flake_tex;
 int window_height = 800;
 int window_width = 500;
 
+
 int main() {
   // inits
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_TIMER);
   IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG);
+  TTF_Init();
   Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, CHUNK_SIZE);
   srand(time(NULL)); // sets random seed to system time
 
@@ -93,6 +100,9 @@ int main() {
 
   // load baka.wav
   Mix_Chunk* baka = Mix_LoadWAV("assets/baka.wav");
+
+  // load font
+  TTF_Font* font = TTF_OpenFont(FONT, 500);
 
   // initialize player struct and texture
   SDL_Surface* reimu_surface = IMG_Load(REIMU_IMG);
@@ -287,7 +297,7 @@ int main() {
         hitless = 0;
       }
     }
-    // player bullets to enemies (most computationaly expensive one O(n^2))
+    // player bullets to enemies (most computationaly expensive one O(enemies * bullets))
     node* pbaux = player_bullet_list.start;
     node* eaux;
     while (pbaux != NULL) {
@@ -306,6 +316,10 @@ int main() {
           score += HIT_BONUS;
           if (e->health <= 0) {
             score += KILL_BONUS;
+            if (e->update_position == boss_update) {
+              score += 10000;
+              score += hitless * 20000;
+            }
             remove_node_from_list(&enemy_list, eaux);
             free(eaux);
             if (e->data_size > 0)
@@ -346,12 +360,18 @@ int main() {
     for (node* aux = enemy_bullet_list.start; aux != NULL; aux = aux->next) {
       draw_entity_to_buffer(renderer, aux->e);
     }
-    
+
+    // UI rendering
+    SDL_Color white = {255,255,255};
+    char text[16]; sprintf(text, "%d", score);
+    SDL_Surface* text_surface = TTF_RenderText_Solid(font, text, white);
+    SDL_Texture* text_texture = SDL_CreateTextureFromSurface(renderer, text_surface);
+    SDL_Rect text_rect = {0, 0, strlen(text) * 50, window_height / 10};
+    SDL_RenderCopy(renderer, text_texture, NULL, &text_rect);
+    SDL_FreeSurface(text_surface);
+    SDL_DestroyTexture(text_texture);
     
     SDL_RenderPresent(renderer);
-
-    // printf("%d\n", score);
-
     // ------ end rendering ------
 
     SDL_Delay(1000/60); // temporary solution for limiting frame rate
@@ -360,6 +380,7 @@ int main() {
   //quits and frees
   SDL_DestroyTexture(reimu_tex);
   SDL_DestroyTexture(cirno_tex);
+  TTF_Quit();
   IMG_Quit();
   Mix_Quit();
   SDL_Quit();

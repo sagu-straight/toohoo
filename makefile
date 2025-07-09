@@ -5,7 +5,7 @@ GAME_NAME = toohoo
 # magic makefile shit
 SRC := $(wildcard src/*.c)
 OBJ := $(patsubst src/%.c,obj/%.o,$(SRC))
-CFLAGS = -lm -lSDL2 -lSDL2_mixer -lSDL2_image -march=native
+CFLAGS = -lm -lSDL2 -lSDL2_mixer -lSDL2_image -lSDL2_ttf -march=native
 
 game: $(OBJ)
 	$(CC) obj/* $(CFLAGS) -o $(GAME_NAME)
